@@ -31,7 +31,7 @@ float xor_gate_model[][3] = {
 	{1, 1, 0},
 };
 
-#define ITERATIONS 500000
+#define ITERATIONS 500
 #define MODEL_SIZE 4
 
 typedef struct {
@@ -143,8 +143,32 @@ void train_logic_gate(const char* gate_name, float (*model)[3], NetworkParams* p
 		forward_pass(x1, x2, p, &cache);
 		backward_pass(x1, x2, y_expected, p, magnitude, &cache);
 	}
+
+	// check accuracy after training
+	int correct_count = 0;
+	for (size_t i = 0; i < MODEL_SIZE; i++)
+	{
+		float x1 = model[i][0];
+		float x2 = model[i][1];
+		float y_expected = model[i][2];
+		int y_pred_label;
+		
+		forward_pass(x1, x2, p, &cache);
+		
+		if (cache.y_pred >= 0.95) {
+			y_pred_label = 1;
+		}
+		else {
+			y_pred_label = 0;
+		}
+		
+		if (y_pred_label == (int)y_expected) correct_count++;
+	}
 	dump_results(gate_name, p);
+	printf("Accuracy: %.2f%%\n", 100.0 * correct_count / MODEL_SIZE);
 }
+
+
 
 int main() {
 	srand(1);
