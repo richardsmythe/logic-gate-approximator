@@ -31,7 +31,7 @@ float xor_gate_model[][3] = {
 	{1, 1, 0},
 };
 
-#define ITERATIONS 100000
+#define ITERATIONS 500000
 #define MODEL_SIZE 4
 
 typedef struct {
@@ -59,7 +59,10 @@ float sigmoid_derivative(float x) {
 	return s * (1 - s);
 }
 
-
+/// <summary>
+///	Calculates each layer’s intermediate values and stores them in the ForwardPass_Intermediate_Values struct (cache)
+///	so they can be used later, such as during backpropagation.
+/// </summary>
 void forward_pass(float x1, float x2, NetworkParams* p, ForwardPass_Intermediate_Values* cache) {
 	cache->h1_input = x1 * p->w1_hidden_1 + x2 * p->w2_hidden_1 + p->b_hidden_1;
 	cache->h1_output = sigmoid_f(cache->h1_input);
@@ -69,16 +72,24 @@ void forward_pass(float x1, float x2, NetworkParams* p, ForwardPass_Intermediate
 	cache->y_pred = sigmoid_f(cache->out_input);
 }
 
+/// <summary>
+/// Updates the network’s weights and biases to reduce the error between the predicted output and the expected output
+/// works backward through the network, calculating how much each weight and bias contributed to the error
+/// It uses the derivative of the sigmoid function and the chain rule from calculus to do this
+/// The gradients show the direction and size of the adjustment needed for each parameter
+/// </summary>
 void backward_pass(float x1, float x2, float y_true, NetworkParams* p, float magnitude, ForwardPass_Intermediate_Values* cache) {
-
+	// Output layer error
 	float d_loss_d_ypred = 2 * (cache->y_pred - y_true);
 	float d_ypred_d_out_input = sigmoid_derivative(cache->out_input);
 	float d_loss_d_out_input = d_loss_d_ypred * d_ypred_d_out_input;
 
+	// Gradients for output layer weights and bias
 	float grad_w_h_output_1 = d_loss_d_out_input * cache->h1_output;
 	float grad_w_h_output_2 = d_loss_d_out_input * cache->h2_output;
 	float grad_b_output = d_loss_d_out_input;
 
+	// Hidden layer error
 	float d_loss_d_h1_output = d_loss_d_out_input * p->w_h_output_1;
 	float d_loss_d_h2_output = d_loss_d_out_input * p->w_h_output_2;
 	float d_h1_output_d_h1_input = sigmoid_derivative(cache->h1_input);
@@ -86,6 +97,7 @@ void backward_pass(float x1, float x2, float y_true, NetworkParams* p, float mag
 	float d_loss_d_h1_input = d_loss_d_h1_output * d_h1_output_d_h1_input;
 	float d_loss_d_h2_input = d_loss_d_h2_output * d_h2_output_d_h2_input;
 
+	// Gradients for hidden layer weights and biases
 	float grad_w1_hidden_1 = d_loss_d_h1_input * x1;
 	float grad_w2_hidden_1 = d_loss_d_h1_input * x2;
 	float grad_b_hidden_1 = d_loss_d_h1_input;
@@ -93,7 +105,7 @@ void backward_pass(float x1, float x2, float y_true, NetworkParams* p, float mag
 	float grad_w2_hidden_2 = d_loss_d_h2_input * x2;
 	float grad_b_hidden_2 = d_loss_d_h2_input;
 
-
+	// Update the weights and biases
 	p->w1_hidden_1 -= magnitude * grad_w1_hidden_1;
 	p->w2_hidden_1 -= magnitude * grad_w2_hidden_1;
 	p->b_hidden_1 -= magnitude * grad_b_hidden_1;
@@ -105,7 +117,7 @@ void backward_pass(float x1, float x2, float y_true, NetworkParams* p, float mag
 	p->b_output -= magnitude * grad_b_output;
 }
 
-void print_logic_gate_results(const char* gate_name, NetworkParams* p) {
+void dump_results(const char* gate_name, NetworkParams* p) {
 	printf("\n------ Results for %s gate ------\n", gate_name);
 	for (size_t i = 0; i < 2; i++) {
 		for (size_t j = 0; j < 2; j++) {
@@ -117,7 +129,9 @@ void print_logic_gate_results(const char* gate_name, NetworkParams* p) {
 	printf("\n");
 }
 
-
+/// <summary>
+/// Train the model with weights and bias
+/// </summary>
 void train_logic_gate(const char* gate_name, float (*model)[3], NetworkParams* p,
 	float eps, float magnitude, size_t iterations) {
 	ForwardPass_Intermediate_Values cache;
@@ -129,7 +143,7 @@ void train_logic_gate(const char* gate_name, float (*model)[3], NetworkParams* p
 		forward_pass(x1, x2, p, &cache);
 		backward_pass(x1, x2, y_expected, p, magnitude, &cache);
 	}
-	print_logic_gate_results(gate_name, p);
+	dump_results(gate_name, p);
 }
 
 int main() {

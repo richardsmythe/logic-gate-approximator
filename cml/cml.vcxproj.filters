@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cml.c">
+    <ClCompile Include="nn.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
